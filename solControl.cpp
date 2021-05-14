@@ -26,7 +26,7 @@ bool runCharger(int iterations, uint8_t* dutyPtr, float Itarget, float Vtarget, 
     }
     else if ()
 
-        // execute constrained MPPT
+        // constrained MPPT
         for (int i = 0; i < iterations; i++) {
             // read system state
             float Vpanel = analogRead(panelVpin) * panelADCscale;

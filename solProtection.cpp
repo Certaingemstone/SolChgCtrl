@@ -9,14 +9,26 @@ uint8_t disengage(uint8_t battEnable, uint8_t PWMpin, uint8_t * dutyPtr) {
 	delay(5000);
 }
 
-bool statusOK(int cutoffLow, int cutoffHigh, float battADCscale, uint8_t battVpin, bool chargerFault)
+bool startOK(int cutoffLow, int cutoffHigh, float battADCscale, float panelADCscale, uint8_t battVpin, uint8_t panelVpin, uint8_t chargerFault)
 {
 	bool engage = 0;
 	float Vbatt = analogRead(battVpin) * battADCscale;
-	// if between cutoffLow-cutoffHigh V, and no fault during charger control, engage or remain engaged
-	if (Vbatt > cutoffLow && Vbatt < cutoffHigh && !chargerFault) {
-		engage = 1;
+	// if between cutoffLow-cutoffHigh V, and no fault during charger control,
+	if (Vbatt > cutoffLow && Vbatt < cutoffHigh && chargerFault == 0) {
+		// check Vds; if okay, engage
+		float Vpanel = analogRead(panelVpin) * panelADCscale;
+		if (Vpanel - Vbatt > 5) {
+			engage = 1;
+		}
 	}
-
 	return engage;
 }
+
+uint8_t runtimeOK(int cutoffLow, int cutoffHigh, float Vtarget, float Vbatt, float Vpanel, float Ipanel, uint8_t chargerMode)
+{
+	uint8_t chargerFault = 0;
+	// TODO
+	return chargerFault;
+}
+
+
