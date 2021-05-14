@@ -7,16 +7,17 @@
 
 void setup() {
     // initial duty cycle out of 255
-    volatile uint8_t duty = 0;
+    // when PWM is high, MOSFET is off: bigger duty = lower output voltage
+    volatile uint8_t duty = 255;
 
-    // initial charger state set to 
+    // initial charger state set to
     // 0 = nominal, 1 = overcurrent detected, or iteration dVdt too large
     volatile bool chargerFault = 0;
 
     // initialize relay off
     digitalWrite(battEnable, LOW);
     pinMode(battEnable, OUTPUT);
-    // initialize MOSFET off; will constantly drain some power through panel
+    // initialize MOSFET off by having PWM high; will constantly drain some power through panel
     digitalWrite(PWMpin, HIGH);
     pinMode(PWMpin, OUTPUT);
     // 32kHz PWM using Timer 1
@@ -42,7 +43,7 @@ void loop() {
             chargerFault = runCharger(10);
             break;
         default:
-            // something weird happened, just stop 
+            // something weird happened, just stop
             disengage(battEnable, PWMpin, &duty);
             // and do not clear fault
             chargerFault = 1;

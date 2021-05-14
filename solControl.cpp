@@ -1,10 +1,20 @@
 #include "solControl.h"
+
+int constantVoltage(float Vout, float Vtarget) {
+
+}
+
+int constantCurrent(float Iin, float Iintarget) {
+
+}
+
+
 //WIP
 bool runCharger(int iterations, uint8_t* dutyPtr, float Itarget, float Vtarget, float VtargetFC,
-    uint8_t PWMpin, uint8_t panelVpin, uint8_t panelIpin, uint8_t battVpin, 
+    uint8_t PWMpin, uint8_t panelVpin, uint8_t panelIpin, uint8_t battVpin,
     float battADCscale, float panelADCscale, float currentADCscale) {
     // input number of times to run control loop
-    // returns 0 if nominal function, returns 1 if large fluctuation in battery side voltage occurred
+    // returns 0 if nominal operation, returns 1 if detect battery disconnect, or other disengage condition
 
     // decide between CC, CV, or float
 

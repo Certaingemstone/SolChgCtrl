@@ -1,9 +1,11 @@
 #include "solProtection.h"
 
 uint8_t disengage(uint8_t battEnable, uint8_t PWMpin, uint8_t * dutyPtr) {
+	// disconnect battery
 	digitalWrite(battEnable, LOW);
-	*dutyPtr = 0;
-	analogWrite(PWMpin, 0);
+	// set so that PWMpin is always on, so MOSFET turns off
+	*dutyPtr = 255;
+	analogWrite(PWMpin, 255);
 	delay(5000);
 }
 
@@ -15,6 +17,6 @@ bool statusOK(int cutoffLow, int cutoffHigh, float battADCscale, uint8_t battVpi
 	if (Vbatt > cutoffLow && Vbatt < cutoffHigh && !chargerFault) {
 		engage = 1;
 	}
-	
+
 	return engage;
 }
