@@ -1,12 +1,20 @@
-#include "solProtection.h"
+#include "Protection.h"
 
-uint8_t disengage(uint8_t battEnable, uint8_t PWMpin, uint8_t * dutyPtr) {
+void disengage(uint8_t battEnable, uint8_t PWMpin, uint8_t* dutyPtr) {
 	// disconnect battery
 	digitalWrite(battEnable, LOW);
 	// set so that PWMpin is always on, so MOSFET turns off
 	*dutyPtr = 255;
 	analogWrite(PWMpin, 255);
 	delay(5000);
+}
+
+void engage(uint8_t battEnable, uint8_t PWMpin, uint8_t* dutyPtr)
+{
+	// set duty cycle to a guessed value
+	*dutyPtr = 100;
+	delay(500);
+	digitalWrite(battEnable, HIGH);
 }
 
 bool startOK(int cutoffLow, int cutoffHigh, float battADCscale, float panelADCscale, uint8_t battVpin, uint8_t panelVpin, uint8_t chargerFault)
