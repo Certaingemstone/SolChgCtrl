@@ -22,17 +22,22 @@ public:
 	// attempts to produce a constant output voltage, will reduce voltage if current limit exceeded
 	// uses proportional controller - maybe will implement a PID later
 
+	uint8_t runConstantCurrent(float Kp, float Itarget, float Ilimit);
+	// attempts to produce a constant output voltage, will reduce voltage if current limit exceeded
+	// uses proportional controller - maybe will implement a PID later
 
 	uint8_t runSLA(uint8_t stage, float Itarget, float Vtarget, float VtargetFC, float Ilimit);
 	// charge procedure for sealed lead acid; stages are
-	// 1 - Constant current at Itarget or lower, MPPT tracking enabled, transfer to 2 when reaching Vtarget
+	// 1 - Constant current at Itarget input current or lower, MPPT tracking enabled, transfer to 2 when reaching Vtarget
 	// 2 - Constant voltage at Vtarget, transfer to 3 when current < 15% of Itarget
 	// 3 - Float at VtargetFC until Vds threshold is reached (i.e. insufficient input voltage available)
 
+	/*
 	uint8_t runLiIon(uint8_t stage, float Itarget, float Vtarget, float Ilimit);
 	// charge procedure for sealed lead acid; stages are
-	// 1 - Constant current at Itarget or lower
+	// 1 - Constant current at Itarget input current or lower
 	// 2 - Constant voltage at Vtarget until current < 5% of Itarget or Vds threshold is reached
+	*/
 };
 
 #endif

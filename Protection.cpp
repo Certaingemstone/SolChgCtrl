@@ -22,7 +22,7 @@ bool startOK(int cutoffLow, int cutoffHigh, float battADCscale, float panelADCsc
 	bool engage = 0;
 	float Vbatt = analogRead(battVpin) * battADCscale;
 	// if between cutoffLow-cutoffHigh V, and no fault during charger control,
-	if (Vbatt > cutoffLow && Vbatt < cutoffHigh && chargerFault == 0) {
+	if (Vbatt >= cutoffLow && Vbatt < cutoffHigh && chargerFault == 0) {
 		// check Vds; if okay, engage
 		float Vpanel = analogRead(panelVpin) * panelADCscale;
 		if (Vpanel - Vbatt > 5) {
@@ -32,11 +32,12 @@ bool startOK(int cutoffLow, int cutoffHigh, float battADCscale, float panelADCsc
 	return engage;
 }
 
+/*
 uint8_t runtimeOK(int cutoffLow, int cutoffHigh, float Vtarget, float Vbatt, float Vpanel, float Ipanel, uint8_t chargerMode)
 {
 	uint8_t chargerFault = 0;
 	// TODO
 	return chargerFault;
 }
-
+*/
 

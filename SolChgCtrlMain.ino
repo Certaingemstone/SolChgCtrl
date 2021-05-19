@@ -8,11 +8,12 @@
 void setup() {
     // initial duty cycle out of 255
     // when PWM is high, MOSFET is off: bigger duty = lower output voltage
-    volatile uint8_t duty = 255;
+    uint8_t volatile duty = 255;
 
     // initial charger state set to
-    // 0 = nominal, 1 = battery disconnected unexpectedly/voltage anomaly, 2 = Vds below safety limit, 3 = overcurrent/fatal
-    volatile uint8_t chargerFault = 0;
+    // 0 = nominal or manual exit, 1 = battery disconnected unexpectedly/voltage anomaly, 
+    // 2 = Vds below safety limit, 3 = overcurrent/fatal
+    uint8_t chargerFault = 0;
 
     // mode, by default is 0 = Lead acid charging, 1 = Manual override as constant voltage source, 2 ...
     uint8_t chargerMode = 0;
