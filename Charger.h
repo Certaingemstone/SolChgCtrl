@@ -18,6 +18,7 @@ public:
 	float prevPower;
 	int8_t prevAdjustment;
 	// state variables that will change when these functions are called, initialized to 0
+	// also to be used by Protection
 	uint8_t panelV, panelI, battV;
 
 	Charger(uint8_t*, uint8_t, uint8_t, uint8_t, uint8_t, uint8_t, uint8_t, float, float, float);
@@ -28,7 +29,7 @@ public:
 	// function to perform the adjustment safely: updateDuty
 	// function to get the new current and voltage: updateState
 	// function to check the validity of the state variables and track violations of voltage/current boundaries: 
-	// runtimeOK, to be included in Protection
+	// runtimeOK, to be included in Protection; this is where the Ilimit and Vlimit parameters will be fed, except for MPPT
 	// larger routines: runCV, runCC, runMPPT, which make use of the above
 
 	// Usage:
@@ -44,13 +45,14 @@ public:
 	// runMPPT also does the same as above, but with MPPT tracking, different cutoff and looser constraints on current/voltage
 
 	void updateState();
-	// measure and update object voltage and current values
+	// measure and update object voltage and current values, should be run before each control iteration
 
 	void resetMPPT();
 	// reset MPPT state variables to 0
 
-	bool updateDuty(int8_t adjustment);
+	bool updateDuty(int8_t adjustment, bool invert = true);
 	// updates the value stored at dutyPtr according to adjustment, returns 1 if success, 0 if hit duty deadzone
+	// if invert is true, for a positive adjustment input, will apply a negative change to duty cycle
 	// if duty deadzone was going to be reached (<=9 or >=245), will set to 10 or 244 instead
 	// does NOT update the analogWrite
 
@@ -63,14 +65,16 @@ public:
 	uint8_t getCurrent();
 	// return currently stored current value, in ADC units
 	
-	int8_t algoCV(float Kp, uint8_t scaledVtarget, uint8_t scaledVtolerance, uint8_t scaledIlimit);
+	int8_t algoCV(float Kp, uint8_t scaledVtarget);
 	// from current state variables, returns the requested adjustment to duty cycle
+	// sign: if current voltage is under target, will return positive value
 	// maximum size of requested adjustment is 20
 	// no time delay
 	// a modified proportional (P) controller
 
-	int8_t algoCC(float Kp, uint8_t scaledItarget, uint8_t scaledItolerance);
+	int8_t algoCC(float Kp, uint8_t scaledItarget);
 	// from current state variables, returns the requested adjustment to duty cycle
+	// sign: if current current is under target, will return positive value
 	// maximum size of requested adjustment is 20
 	// no time delay
 	// a modified proportional (P) controller 
@@ -78,6 +82,7 @@ public:
 	int8_t algoMPPT(float Kp, uint8_t scaledSoftIlimit);
 	// from current state variables, returns the requested adjustment to duty cycle
 	// maximum size of requested adjustment is 1
+	// sign: same as CV and CC
 	// a perturb-and-observe MPPT implementation
 	// no time delay
 	// updates prevPower and prevAdjustment for next iteration

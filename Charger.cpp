@@ -77,6 +77,7 @@ uint8_t Charger::runConstantVoltage(float Kp, float Vtarget, float Ilimit, float
                 Iviolations = 0; // reset if no longer violating
             }
 
+            /*
             // determine adjustment to duty cycle
             adjRaw = Kp * (Vout - Vtarget); // negative if output is less than target 
             // since we need to decrease signal duty cycle (i.e. from MCU) to increase output voltage
@@ -90,6 +91,8 @@ uint8_t Charger::runConstantVoltage(float Kp, float Vtarget, float Ilimit, float
             else {
                 adj = (adjRaw >= 0) ? (int8_t)(adjRaw + 0.5) : (int8_t)(adjRaw - 0.5); // round
             }
+            */
+
             /*
             // apply adjustment to duty cycle
             if (adj < 0) {
@@ -173,8 +176,9 @@ void Charger::resetMPPT()
     prevAdjustment = 0;
 }
 
-bool Charger::updateDuty(int8_t adjustment)
+bool Charger::updateDuty(int8_t adjustmentIn, bool invert)
 {   
+    adjustment = (invert) ? -adjustmentIn : adjustmentIn;
     bool success = false;
     // apply adjustment to duty cycle
     if (adjustment < 0) {
@@ -215,3 +219,48 @@ uint8_t Charger::getCurrent()
 {
     return panelI;
 }
+
+int8_t Charger::algoCV(float Kp, uint8_t scaledVtarget)
+{
+    int8_t adj = 0;
+    // determine adjustment; battV is also a int16_t
+    int16_t adjRaw = (battV > scaledVtarget) ? (int16_t)(Kp * (battV - scaledVtarget) * -1) : (int16_t)(Kp * (scaledVtarget - battV));
+    // If output > target, then give negative adjustment. Otherwise, output < target, give positive adjustment.
+    // limit of step size for stability purposes
+    if (adjRaw > 20) {
+        adj = 20;
+    }
+    else if (adjRaw < -20) {
+        adj = -20;
+    }
+    else {
+        adj = (adjRaw >= 0) ? (int8_t)(adjRaw + 0.5) : (int8_t)(adjRaw - 0.5); // round, by this point adjRaw should fit
+    }
+    return adj;
+}
+
+int8_t Charger::algoCC(float Kp, uint8_t scaledItarget)
+{
+    int8_t adj = 0;
+    // determine adjustment; battV is also a int16_t
+    int16_t adjRaw = (panelI > scaledItarget) ? (int16_t)(Kp * (panelI - scaledItarget) * -1) : (int16_t)(Kp * (scaledItarget - panelI));
+    // If output > target, then give negative adjustment. Otherwise, output < target, give positive adjustment.
+    // limit of step size for stability purposes
+    if (adjRaw > 20) {
+        adj = 20;
+    }
+    else if (adjRaw < -20) {
+        adj = -20;
+    }
+    else {
+        adj = (adjRaw >= 0) ? (int8_t)(adjRaw + 0.5) : (int8_t)(adjRaw - 0.5); // round, by this point adjRaw should fit
+    }
+    return adj;
+}
+
+int8_t Charger::algoMPPT(float Kp, uint8_t scaledSoftIlimit)
+{
+    //TODO
+    return int8_t();
+}
+
