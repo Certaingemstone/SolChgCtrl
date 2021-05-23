@@ -14,8 +14,11 @@ private:
 	uint8_t const PWMpin, panelVpin, panelIpin, battVpin, battEnable, inputpin;
 	float const battADCscale, panelADCscale, currentADCscale;
 public:
-	// state variables that will change when these functions are called
-	//uint8_t 
+	// MPPT specific variables
+	float prevPower;
+	int8_t prevAdjustment;
+	// state variables that will change when these functions are called, initialized to 0
+	uint8_t panelV, panelI, battV;
 
 	Charger(uint8_t*, uint8_t, uint8_t, uint8_t, uint8_t, uint8_t, uint8_t, float, float, float);
 
@@ -24,7 +27,8 @@ public:
 	// algoCV, algoCC, algoMPPT
 	// function to perform the adjustment safely: updateDuty
 	// function to get the new current and voltage: updateState
-	// function to check the validity of the state variables and track violations of voltage/current boundaries: runOK
+	// function to check the validity of the state variables and track violations of voltage/current boundaries: 
+	// runtimeOK, to be included in Protection
 	// larger routines: runCV, runCC, runMPPT, which make use of the above
 
 	// Usage:
@@ -39,9 +43,51 @@ public:
 	// runConstantCurrent does more or less the same as runConstantVoltage, just with different cutoff and different variable
 	// runMPPT also does the same as above, but with MPPT tracking, different cutoff and looser constraints on current/voltage
 
+	void updateState();
+	// measure and update object voltage and current values
 
+	void resetMPPT();
+	// reset MPPT state variables to 0
+
+	bool updateDuty(int8_t adjustment);
+	// updates the value stored at dutyPtr according to adjustment, returns 1 if success, 0 if hit duty deadzone
+	// if duty deadzone was going to be reached (<=9 or >=245), will set to 10 or 244 instead
+	// does NOT update the analogWrite
+
+	uint8_t getInVoltage();
+	// return currently stored voltage value, in ADC units
+
+	uint8_t getOutVoltage();
+	// return currently stored voltage value, in ADC units
+
+	uint8_t getCurrent();
+	// return currently stored current value, in ADC units
+	
+	int8_t algoCV(float Kp, uint8_t scaledVtarget, uint8_t scaledVtolerance, uint8_t scaledIlimit);
+	// from current state variables, returns the requested adjustment to duty cycle
+	// maximum size of requested adjustment is 20
+	// no time delay
+	// a modified proportional (P) controller
+
+	int8_t algoCC(float Kp, uint8_t scaledItarget, uint8_t scaledItolerance);
+	// from current state variables, returns the requested adjustment to duty cycle
+	// maximum size of requested adjustment is 20
+	// no time delay
+	// a modified proportional (P) controller 
+	
+	int8_t algoMPPT(float Kp, uint8_t scaledSoftIlimit);
+	// from current state variables, returns the requested adjustment to duty cycle
+	// maximum size of requested adjustment is 1
+	// a perturb-and-observe MPPT implementation
+	// no time delay
+	// updates prevPower and prevAdjustment for next iteration
+
+	
+
+
+	// TO BE REFACTORED USING ABOVE HELPERS
 	// For all the following, if overcurrent condition persists, will disengage charger
-	// and return 0 if nominal operation, 1 if load disconnected, 2 if Vds too low, 3 if overcurrent
+	// and return 0 if nominal operation, 1 if load disconnected, 2 if Vds too low under load (e.g. <3.5V, >100mA), 3 if overcurrent
 	// Each adjusts the duty cycle of the PWM running in SolChgCtrlMain
 	
 	//uint8_t runConstantVoltage(float Kp, float Vtarget, float Ilimit);

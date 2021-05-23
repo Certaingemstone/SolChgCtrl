@@ -18,6 +18,7 @@ bool startOK(int cutoffLow, int cutoffHigh, float battADCscale, float panelADCsc
 // based on detecting battery connects and disconnects and voltage
 // returns 0 if no, 1 if yes
 
+// must run on each control iteration (to keep track of current and voltage violations)
 //uint8_t runtimeOK(int cutoffLow, int cutoffHigh, float Vtarget, float Vbatt, float Vpanel, float Ipanel, uint8_t chargerMode);
 // assumes charger is engaged (relay on, FET active)
 // based on measured current, input voltage, and output voltage,

@@ -7,6 +7,8 @@ Charger::Charger(uint8_t* dutyPtrIn, uint8_t PWMpinIn,
     dutyPtr = dutyPtrIn; PWMpin = PWMpinIn; panelVpin = panelVpinIn; 
     panelIpin = panelIpinIn; battVpin = battVpinIn; battEnable = battEnableIn; inputpin = inputpinIn;
     battADCscale = battADCscaleIn; panelADCscale = panelADCscaleIn; currentADCscale = currentADCscaleIn;
+
+    prevPower = 0.0f; prevAdjustment = 0; panelV = 0; panelI = 0; battV = 0;
 }
 
 
@@ -88,7 +90,7 @@ uint8_t Charger::runConstantVoltage(float Kp, float Vtarget, float Ilimit, float
             else {
                 adj = (adjRaw >= 0) ? (int8_t)(adjRaw + 0.5) : (int8_t)(adjRaw - 0.5); // round
             }
-
+            /*
             // apply adjustment to duty cycle
             if (adj < 0) {
                 // avoid entering forbidden region when adjusting duty cycle down
@@ -109,6 +111,7 @@ uint8_t Charger::runConstantVoltage(float Kp, float Vtarget, float Ilimit, float
                     *dutyPtr = *dutyPtr + adj;
                 }
             }
+            */
         }
     }
 
@@ -134,93 +137,7 @@ uint8_t Charger::runConstantCurrent(float Kp, float Itarget, float Ilimit)
     float adjRaw = 0;
     int8_t adj = 0;
 
-    engage(battEnable, PWMpin, dutyPtr);
-
-    while (running) {
-        // handle stopping via user input (runs every 10 iterations/100ms)
-        if ((int)digitalRead(inputpin) == 1) {
-            running = false; // stop after next control loop
-        }
-
-        // handle output voltage tolerance
-        if (Vviolations > VviolationsMax) {
-            running = false;
-            flag = 1;
-        }
-        float absVdiff = ((Vout - Vtarget) < 0) ? (Vtarget - Vout) : (Vout - Vtarget); // if x < 0 return -x, else return x
-        if (absVdiff > tolerance) {
-            Vviolations++;
-        }
-        else {
-            Vviolations = 0; // reset if no longer violating
-        }
-
-        // handle Vds protection (runs every 10 iterations/100ms)
-        Vin = analogRead(panelVpin) * panelADCscale;
-        if ((Vin - Vout) < 4f) {
-            running = false;
-            flag = 2;
-        }
-
-
-        // control loop, each loop (10 iterations) will run a bit over 100ms
-        for (int i = 0; i < 10; i++) {
-            // handle overcurrent protection
-            if (Iviolations > IviolationsMax) {
-                running = false;
-                flag = 3;
-                break;
-            }
-            if (Iin > Ilimit) {
-                Iviolations++;
-            }
-            else {
-                Iviolations = 0; // reset if no longer violating
-            }
-
-            // determine adjustment to duty cycle
-            adjRaw = Kp * (Vout - Vtarget); // negative if output is less than target 
-            // since we need to decrease signal duty cycle (i.e. from MCU) to increase output voltage
-            // limit of step size for stability purposes
-            if (adjRaw > 20f) {
-                adj = 20;
-            }
-            else if (adjRaw < -20f) {
-                adj = -20;
-            }
-            else {
-                adj = (adjRaw >= 0) ? (int8_t)(adjRaw + 0.5) : (int8_t)(adjRaw - 0.5); // round
-            }
-
-            // apply adjustment to duty cycle
-            if (adj < 0) {
-                // avoid entering forbidden region when adjusting duty cycle down
-                if ((uint8_t)(-adj) >= *dutyPtr - margin) {
-                    // duty set to 100 by engage() initially; this won't underflow
-                    *dutyPtr = margin + 1;
-                }
-                else {
-                    *dutyPtr = *dutyPtr + adj; // note: this works
-                }
-            }
-            else {
-                // avoid entering forbidden region when adjusting it up
-                if ((uint8_t)(adj) >= UINT8_MAX - *dutyPtr - margin) {
-                    *dutyPtr = UINT8_MAX - margin - 1;
-                }
-                else {
-                    *dutyPtr = *dutyPtr + adj;
-                }
-            }
-
-            // refresh output voltage and input current
-            delay(10);
-            Vout = analogRead(battVpin) * battADCscale;
-            Iin = analogRead(panelIpin) * currentADCscale;
-        }
-    }
-
-    disengage(battEnable, PWMpin, dutyPtr);
+    //roughly same code here as ConstantVoltage
 
     return flag;
 }
@@ -242,3 +159,59 @@ uint8_t Charger::runLiIon(uint8_t stage, float Itarget, float Vtarget, float Ili
     return flag;
 }
 */
+
+void Charger::updateState()
+{
+    panelV = analogRead(panelVpin);
+    panelI = analogRead(panelIpin);
+    battV = analogRead(battVpin);
+}
+
+void Charger::resetMPPT()
+{
+    prevPower = 0.0f;
+    prevAdjustment = 0;
+}
+
+bool Charger::updateDuty(int8_t adjustment)
+{   
+    bool success = false;
+    // apply adjustment to duty cycle
+    if (adjustment < 0) {
+        // avoid entering forbidden region when adjusting duty cycle down
+        if ((uint8_t)(-adjustment) >= *dutyPtr - margin) {
+            // duty set to 100 by engage() initially; this won't underflow
+            *dutyPtr = margin + 1;
+        }
+        else {
+            *dutyPtr = *dutyPtr + adjustment; // note: this works
+            success = true;
+        }
+    }
+    else {
+        // avoid entering forbidden region when adjusting it up
+        if ((uint8_t)(adjustment) >= UINT8_MAX - *dutyPtr - margin) {
+            *dutyPtr = UINT8_MAX - margin - 1;
+        }
+        else {
+            *dutyPtr = *dutyPtr + adjustment;
+            success = true;
+        }
+    }
+    return success;
+}
+
+uint8_t Charger::getInVoltage()
+{
+    return panelV;
+}
+
+uint8_t Charger::getOutVoltage()
+{
+    return battV;
+}
+
+uint8_t Charger::getCurrent()
+{
+    return panelI;
+}
