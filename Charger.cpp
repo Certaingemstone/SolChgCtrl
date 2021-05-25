@@ -8,7 +8,7 @@ Charger::Charger(uint8_t* dutyPtrIn, uint8_t PWMpinIn,
     panelIpin = panelIpinIn; battVpin = battVpinIn; battEnable = battEnableIn; inputpin = inputpinIn;
     battADCscale = battADCscaleIn; panelADCscale = panelADCscaleIn; currentADCscale = currentADCscaleIn;
 
-    prevPower = 0.0f; prevAdjustment = 0; panelV = 0; panelI = 0; battV = 0;
+    prevPower = 0; prevAdjustment = false; panelV = 0; panelI = 0; battV = 0;
 }
 
 
@@ -146,13 +146,14 @@ uint8_t Charger::runConstantCurrent(float Kp, float Itarget, float Ilimit)
 }
 
 
+/*
 uint8_t Charger::runSLA(uint8_t stage, float Itarget, float Vtarget, float VtargetFC, float Ilimit)
 {
     uint8_t flag = 0;
     disengage(battEnable, PWMpin, dutyPtr);
     return flag;
 }
-
+*/
 
 /*
 uint8_t Charger::runLiIon(uint8_t stage, float Itarget, float Vtarget, float Ilimit)
@@ -258,9 +259,33 @@ int8_t Charger::algoCC(float Kp, uint8_t scaledItarget)
     return adj;
 }
 
+//this is sketchy, should test
 int8_t Charger::algoMPPT(float Kp, uint8_t scaledSoftIlimit)
 {
-    //TODO
-    return int8_t();
+    int8_t adj = 0;
+    // calculate current power (in ADC units)
+    uint32_t currPower = panelV * panelI;
+    // compare to prevPower
+    // if current > previous make adjustment in same direction indicated by prevAdjustment
+    if (currPower > prevPower) {
+        adj = (prevAdjustment) ? 1 : -1;
+        // prevAdjustment remains the same
+    }
+    // otherwise, switch direction
+    else {
+        adj = (prevAdjustment) ? -1 : 1;
+        //prevAdjustment switches
+        prevAdjustment = !prevAdjustment;
+    }
+    // check current limit
+    if (panelI > scaledSoftIlimit) {
+        adj = -1;
+        prevAdjustment = false;
+    }
+    // update prevPower
+    prevPower = currPower;
+
+    return adj;
+
 }
 

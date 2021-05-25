@@ -15,8 +15,8 @@ private:
 	float const battADCscale, panelADCscale, currentADCscale;
 public:
 	// MPPT specific variables
-	float prevPower;
-	int8_t prevAdjustment;
+	uint32_t prevPower;
+	bool prevAdjustment; // 0 -> previously down, 1 -> previously up
 	// state variables that will change when these functions are called, initialized to 0
 	// also to be used by Protection
 	uint8_t panelV, panelI, battV;
@@ -45,7 +45,7 @@ public:
 	// runMPPT also does the same as above, but with MPPT tracking, different cutoff and looser constraints on current/voltage
 
 	void updateState();
-	// measure and update object voltage and current values, should be run before each control iteration
+	// measure and update object voltage and current values, should be run before each control iteration of any algo
 
 	void resetMPPT();
 	// reset MPPT state variables to 0
@@ -91,18 +91,10 @@ public:
 
 
 	// TO BE REFACTORED USING ABOVE HELPERS
-	// For all the following, if overcurrent condition persists, will disengage charger
+	// For all the following, if overcurrent condition persists, will disengage charger (logic to be in Protection)
 	// and return 0 if nominal operation, 1 if load disconnected, 2 if Vds too low under load (e.g. <3.5V, >100mA), 3 if overcurrent
 	// Each adjusts the duty cycle of the PWM running in SolChgCtrlMain
 	
-	//uint8_t runConstantVoltage(float Kp, float Vtarget, float Ilimit);
-	// attempts to produce a constant output voltage, will reduce voltage if current limit exceeded
-	// uses proportional controller - maybe will implement a PID later
-
-	//uint8_t runConstantCurrent(float Kp, float Itarget, float Ilimit);
-	// attempts to produce a constant output voltage, will reduce voltage if current limit exceeded
-	// uses proportional controller - maybe will implement a PID later
-
 	//uint8_t runSLA(uint8_t stage, float Itarget, float Vtarget, float VtargetFC, float Ilimit);
 	// charge procedure for sealed lead acid; stages are
 	// 1 - Constant current at Itarget input current or lower, MPPT tracking enabled, transfer to 2 when reaching Vtarget
