@@ -32,12 +32,42 @@ bool startOK(int cutoffLow, int cutoffHigh, float battADCscale, float panelADCsc
 	return engage;
 }
 
-/*
-uint8_t runtimeOK(int cutoffLow, int cutoffHigh, float Vtarget, float Vbatt, float Vpanel, float Ipanel, uint8_t chargerMode)
+
+uint8_t runtimeOK(uint8_t chargerMode, Charger charger, uint8_t * VviolationsPtr, uint8_t * IviolationsPtr, 
+	uint8_t cutoffVLow, uint8_t cutoffVHigh, uint8_t cutoffI, 
+	uint8_t VviolationsLim, uint8_t IviolationsLim, uint8_t Vdsmin)
 {
 	uint8_t chargerFault = 0;
-	// TODO
+	// voltages and currents in ADC units
+	uint8_t Vin = charger.getInVoltage();
+	uint8_t Vout = charger.getOutVoltage();
+	uint8_t Iin = charger.getCurrent();
+
+	// check for voltage out of range
+	if (Vout < cutoffVLow || Vout > cutoffVHigh) {
+		*VviolationsPtr = *VviolationsPtr + 1;
+	}
+	if (*VviolationsPtr > VviolationsLim) {
+		chargerFault = 1;
+	}
+	
+	// check for Vds too low
+	if (Vin - Vout < Vdsmin) {
+		chargerFault = 2;
+	}
+	if (Vin <= Vout) {
+		chargerFault = 2; // needed to handle Vin < Vout, where Vin-Vout may be large due to uint subtraction
+	}
+
+	// check for current over limit (i.e. near Isc of array for MPPT mode, or specific limit for others)
+	if (Iin > cutoffI) {
+		*IviolationsPtr = *IviolationsPtr + 1;
+	}
+	if (*IviolationsPtr > IviolationsLim) {
+		chargerFault = 3;
+	}
+
 	return chargerFault;
 }
-*/
+
 

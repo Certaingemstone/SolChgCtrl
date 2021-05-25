@@ -4,6 +4,8 @@
 #include <Arduino.h>
 #include <stdint.h>
 
+#include "Charger.h"
+
 void disengage(uint8_t battEnable, uint8_t PWMpin, uint8_t* dutyPtr);
 // sets battEnable low and sets PWM duty cycle to 255 out of 255 (always high, i.e. MOSFET off)
 
@@ -19,12 +21,10 @@ bool startOK(int cutoffLow, int cutoffHigh, float battADCscale, float panelADCsc
 // returns 0 if no, 1 if yes
 
 // must run on each control iteration (to keep track of current and voltage violations)
-//uint8_t runtimeOK(int cutoffLow, int cutoffHigh, float Vtarget, float Vbatt, float Vpanel, float Ipanel, uint8_t chargerMode);
+uint8_t runtimeOK(uint8_t chargerMode, Charger charger, uint8_t* VviolationsPtr, uint8_t* IviolationsPtr,
+	uint8_t cutoffVLow, uint8_t cutoffVHigh, uint8_t cutoffI,
+	uint8_t VviolationsLim, uint8_t IviolationsLim, uint8_t Vdsmin);
 // assumes charger is engaged (relay on, FET active)
-// based on measured current, input voltage, and output voltage,
-// determines whether to continue charger operation after startup.
-// will return 0 or fault states 1, 2, or 3, as described in SolChgCtrlMain setup()
-// Vtarget is used if charger is operating in manual override
-// will return 1 if too far from Vtarget in that case
+// returns 0 or fault states 1, 2, or 3, as described in SolChgCtrlMain setup()
 
 #endif
