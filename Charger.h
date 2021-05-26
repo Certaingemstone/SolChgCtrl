@@ -10,21 +10,20 @@ class Charger {
 private:
 	// system parameters that won't change
 	uint8_t* const dutyPtr;
-	uint8_t const PWMpin, panelVpin, panelIpin, battVpin, battEnable, inputpin;
-	float const battADCscale, panelADCscale, currentADCscale;
+	uint8_t const panelVpin, panelIpin, battVpin, inputpin;
 public:
 	// MPPT specific variables
 	uint32_t prevPower;
 	bool prevAdjustment; // 0 -> previously down, 1 -> previously up
 	// state variables that will change when these functions are called, initialized to 0
 	// also to be used by Protection
-	uint8_t panelV, panelI, battV;
+	uint16_t panelV, panelI, battV;
 
-	Charger(uint8_t*, uint8_t, uint8_t, uint8_t, uint8_t, uint8_t, uint8_t, float, float, float);
+	Charger(uint8_t*, uint8_t, uint8_t, uint8_t);
 
 	// to make
 	// functions that return the requested adjustment to duty cycle per a given algorithm, given state: 
-	// algoCV, algoCC, algoMPPT
+	// stepCV, stepCC, stepMPPT
 	// function to perform the adjustment safely: updateDuty
 	// function to get the new current and voltage: updateState
 	// function to check the validity of the state variables and track violations of voltage/current boundaries: 
@@ -37,50 +36,51 @@ public:
 	// runConstantVoltage will have different disengage conditions depending on how it's called, including;
 	// - protection and manual interrupt only (the conditions in 5/18/2021 version)
 	// - all of the above + a current (for CV) or voltage (for CC/MPPT) cutoff specified by caller; ending by the cutoff will NOT turn off battEnable, will only set duty cycle to 255.
-	// runConstantVoltage updateState's, then algoCV's, then updateDuty's, and runOK's (and if flag is on, also checks cutoff)
+	// runConstantVoltage updateState's, then stepCV's, then updateDuty's, and runOK's (and if flag is on, also checks cutoff)
 	// - returns exit code flag from runOK or cutoff check if applicable
 	// runConstantCurrent does more or less the same as runConstantVoltage, just with different cutoff and different variable
 	// runMPPT also does the same as above, but with MPPT tracking, different cutoff and looser constraints on current/voltage
 
+	// measure and update object voltage and current values, should be run before each control iteration of any algorithm
 	void updateState();
-	// measure and update object voltage and current values, should be run before each control iteration of any algo
-
-	void resetMPPT();
+	
 	// reset MPPT state variables to 0
-
-	bool updateDuty(int8_t adjustment, bool invert = true);
+	void resetMPPT();
+	
 	// updates the value stored at dutyPtr according to adjustment, returns 1 if success, 0 if hit duty deadzone
 	// if invert is true, for a positive adjustment input, will apply a negative change to duty cycle
 	// if duty deadzone was going to be reached (<=9 or >=245), will set to 10 or 244 instead
+	// assumes 9 < duty < 245 initially
 	// does NOT update the analogWrite
-
-	uint8_t getInVoltage();
+	bool updateDuty(int8_t adjustment, bool invert = true);
+	
 	// return currently stored voltage value, in ADC units
-
-	uint8_t getOutVoltage();
+	uint16_t getInVoltage();
+	
 	// return currently stored voltage value, in ADC units
-
-	uint8_t getCurrent();
+	uint16_t getOutVoltage();
+	
 	// return currently stored current value, in ADC units
-
-	int8_t algoCV(float Kp, uint8_t scaledVtarget);
+	uint16_t getCurrent();
+	
 	// from current state variables, returns the requested adjustment to duty cycle
 	// sign: if current voltage is under target, will return positive value
+	int8_t stepCV(float Kp, uint16_t scaledVtarget);
 	// maximum size of requested adjustment is 20
 	// no time delay
 	// a modified proportional (P) controller
 
-	int8_t algoCC(float Kp, uint8_t scaledItarget);
 	// from current state variables, returns the requested adjustment to duty cycle
 	// sign: if current current is under target, will return positive value
+	int8_t stepCC(float Kp, uint16_t scaledItarget);
 	// maximum size of requested adjustment is 20
 	// no time delay
 	// a modified proportional (P) controller 
 
-	int8_t algoMPPT(float Kp, uint8_t scaledSoftIlimit);
 	// from current state variables, returns the requested adjustment to duty cycle
-	// maximum size of requested adjustment is 1
 	// sign: same as CV and CC
+	int8_t stepMPPT(float Kp, uint16_t scaledSoftIlimit);
+	// maximum size of requested adjustment is 1
 	// a perturb-and-observe MPPT implementation
 	// no time delay
 	// updates prevPower and prevAdjustment for next iteration

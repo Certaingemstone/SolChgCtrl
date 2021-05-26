@@ -3,8 +3,8 @@
 
 // MODE-SPECIFIC CONSTANTS
 // pin on which to take user input
-static const uint8_t default_inputPin = 1;
-static const uint8_t default_modePin = 2;
+static const uint8_t default_inputPin = 6;
+static const uint8_t default_modePin = 7;
 
 // voltage at which to turn relay on or off
 static const int cutoffLow[] = { 9, -1 }; // [0] for lead acid, [1] for manual
@@ -16,6 +16,10 @@ static const float default_VtargetFC = 13.5; // float charge 2.25V per cell
 
 // target/limit current on input side for lead acid
 static const float default_Itarget = 1.0; // a bit above C/8 for 8Ah battery
+
+// control loop tuning parameters
+static const float CV_Kp = 1.0;
+static const float CC_Kp = 1.0;
 
 // SYSTEM CONSTANTS
 // ideal (uncalibrated) size of one ADC step (5/1024) since ADC goes from 0-1023
@@ -30,15 +34,19 @@ static const float currentdivider = 5; // 200x gain on the voltage drop; and V =
 
 // define pins
 static const uint8_t default_PWMpin = 10;
-static const uint8_t default_panelVpin = A0;
-static const uint8_t default_panelIpin = A1;
-static const uint8_t default_battVpin = A2;
+static const uint8_t default_panelVpin = 0;
+static const uint8_t default_panelIpin = 1;
+static const uint8_t default_battVpin = 2;
 static const uint8_t default_battEnable = 12;
 
 // some useful values
 static const float default_battADCscale = ADCunit * battVdivider; // multiply by ADC reading on batt divider to get full voltage (V)
 static const float default_panelADCscale = ADCunit * panelVdivider; // " " but with panel divider, to get full voltage across panel
 static const float default_currentADCscale = ADCunit * currentdivider; // multiply by ADC reading on shunt differential amplifier to get current (A) through input side
+
+// (0.0213Vin/ADCunit)
+// (.0244Ain/ADCunit)
+static const uint16_t VADC_12 = 559; // for 12V output: 12V/battADCscale = 559 (0.0214Vout/ADCunit)
 
 
 #endif

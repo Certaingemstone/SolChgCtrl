@@ -8,13 +8,14 @@ void Protection::disengage(uint8_t battEnable, uint8_t PWMpin, uint8_t* dutyPtr)
 	// set so that PWMpin is always on, so MOSFET turns off
 	*dutyPtr = 255;
 	analogWrite(PWMpin, 255);
-	delay(5000);
+	delay(1000);
 }
 
 void Protection::engage(uint8_t battEnable, uint8_t PWMpin, uint8_t* dutyPtr)
 {
 	// set duty cycle to a guessed value
 	*dutyPtr = 100;
+	analogWrite(PWMpin, 100);
 	delay(500);
 	digitalWrite(battEnable, HIGH);
 }
@@ -35,15 +36,15 @@ bool Protection::startOK(int cutoffLow, int cutoffHigh, float battADCscale, floa
 }
 
 
-uint8_t Protection::runtimeOK(uint8_t chargerMode, Charger charger, uint8_t * VviolationsPtr, uint8_t * IviolationsPtr,
-	uint8_t cutoffVLow, uint8_t cutoffVHigh, uint8_t cutoffI, 
-	uint8_t VviolationsLim, uint8_t IviolationsLim, uint8_t Vdsmin)
+uint8_t Protection::runtimeOK(Charger charger, uint8_t * VviolationsPtr, uint8_t * IviolationsPtr,
+	uint16_t cutoffVLow, uint16_t cutoffVHigh, uint16_t cutoffI, 
+	uint8_t VviolationsLim, uint8_t IviolationsLim, uint16_t Vdsmin)
 {
 	uint8_t chargerFault = 0;
 	// voltages and currents in ADC units
-	uint8_t Vin = charger.getInVoltage();
-	uint8_t Vout = charger.getOutVoltage();
-	uint8_t Iin = charger.getCurrent();
+	uint16_t Vin = charger.getInVoltage();
+	uint16_t Vout = charger.getOutVoltage();
+	uint16_t Iin = charger.getCurrent();
 
 	// check for voltage out of range
 	if (Vout < cutoffVLow || Vout > cutoffVHigh) {

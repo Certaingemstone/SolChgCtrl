@@ -1,12 +1,9 @@
 #include "Charger.h"
 
-Charger::Charger(uint8_t* dutyPtrIn, uint8_t PWMpinIn, 
-    uint8_t panelVpinIn, uint8_t panelIpinIn, uint8_t battVpinIn, uint8_t battEnableIn, uint8_t inputpinIn,
-    float battADCscaleIn, float panelADCscaleIn, float currentADCscaleIn)
+Charger::Charger(uint8_t* dutyPtrIn, uint8_t panelVpinIn, uint8_t panelIpinIn, uint8_t battVpinIn)
 {
-    dutyPtr = dutyPtrIn; PWMpin = PWMpinIn; panelVpin = panelVpinIn; 
-    panelIpin = panelIpinIn; battVpin = battVpinIn; battEnable = battEnableIn; inputpin = inputpinIn;
-    battADCscale = battADCscaleIn; panelADCscale = panelADCscaleIn; currentADCscale = currentADCscaleIn;
+    dutyPtr = dutyPtrIn; panelVpin = panelVpinIn; 
+    panelIpin = panelIpinIn; battVpin = battVpinIn;
 
     prevPower = 0; prevAdjustment = false; panelV = 0; panelI = 0; battV = 0;
 }
@@ -14,15 +11,15 @@ Charger::Charger(uint8_t* dutyPtrIn, uint8_t PWMpinIn,
 
 void Charger::updateState()
 {
-    panelV = analogRead(panelVpin);
-    panelI = analogRead(panelIpin);
-    battV = analogRead(battVpin);
+    panelV = (uint16_t)(analogRead(panelVpin));
+    panelI = (uint16_t)(analogRead(panelIpin));
+    battV = (uint16_t)(analogRead(battVpin));
 }
 
 void Charger::resetMPPT()
 {
     prevPower = 0.0f;
-    prevAdjustment = 0;
+    prevAdjustment = false;
 }
 
 bool Charger::updateDuty(int8_t adjustmentIn, bool invert)
@@ -54,25 +51,25 @@ bool Charger::updateDuty(int8_t adjustmentIn, bool invert)
     return success;
 }
 
-uint8_t Charger::getInVoltage()
+uint16_t Charger::getInVoltage()
 {
     return panelV;
 }
 
-uint8_t Charger::getOutVoltage()
+uint16_t Charger::getOutVoltage()
 {
     return battV;
 }
 
-uint8_t Charger::getCurrent()
+uint16_t Charger::getCurrent()
 {
     return panelI;
 }
 
-int8_t Charger::algoCV(float Kp, uint8_t scaledVtarget)
+int8_t Charger::stepCV(float Kp, uint16_t scaledVtarget)
 {
     int8_t adj = 0;
-    // determine adjustment; battV is also a int16_t
+    // determine adjustment; battV is also a uint16_t
     int16_t adjRaw = (battV > scaledVtarget) ? (int16_t)(Kp * (battV - scaledVtarget) * -1) : (int16_t)(Kp * (scaledVtarget - battV));
     // If output > target, then give negative adjustment. Otherwise, output < target, give positive adjustment.
     // limit of step size for stability purposes
@@ -83,12 +80,12 @@ int8_t Charger::algoCV(float Kp, uint8_t scaledVtarget)
         adj = -20;
     }
     else {
-        adj = (adjRaw >= 0) ? (int8_t)(adjRaw + 0.5) : (int8_t)(adjRaw - 0.5); // round, by this point adjRaw should fit
+        adj = (adjRaw >= 0) ? (int8_t)(adjRaw + 0.5) : (int8_t)(adjRaw - 0.5); // round, by this point adjRaw should fit in int8
     }
     return adj;
 }
 
-int8_t Charger::algoCC(float Kp, uint8_t scaledItarget)
+int8_t Charger::stepCC(float Kp, uint16_t scaledItarget)
 {
     int8_t adj = 0;
     // determine adjustment; battV is also a int16_t
@@ -108,7 +105,7 @@ int8_t Charger::algoCC(float Kp, uint8_t scaledItarget)
 }
 
 //this is sketchy, should test
-int8_t Charger::algoMPPT(float Kp, uint8_t scaledSoftIlimit)
+int8_t Charger::stepMPPT(float Kp, uint16_t scaledSoftIlimit)
 {
     int8_t adj = 0;
     // calculate current power (in ADC units)
