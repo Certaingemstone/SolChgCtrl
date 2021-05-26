@@ -4,8 +4,6 @@
 #include <Arduino.h>
 #include <stdint.h>
 
-#include "Protection.h"
-
 class Charger {
 private:
 	// system parameters that won't change
