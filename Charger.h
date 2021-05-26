@@ -6,7 +6,6 @@
 
 #include "Protection.h"
 
-
 class Charger {
 private:
 	// system parameters that won't change
@@ -29,8 +28,7 @@ public:
 	// function to perform the adjustment safely: updateDuty
 	// function to get the new current and voltage: updateState
 	// function to check the validity of the state variables and track violations of voltage/current boundaries: 
-	// runtimeOK, to be included in Protection; this is where the Ilimit and Vlimit parameters will be fed, except for MPPT
-	// larger routines: runCV, runCC, runMPPT, which make use of the above
+	// runtimeOK, in Protection; this is where the Ilimit and Vlimit parameters will be fed
 
 	// Usage:
 	// Main function initializes a Charger, not with a specific mode 
@@ -64,7 +62,7 @@ public:
 
 	uint8_t getCurrent();
 	// return currently stored current value, in ADC units
-	
+
 	int8_t algoCV(float Kp, uint8_t scaledVtarget);
 	// from current state variables, returns the requested adjustment to duty cycle
 	// sign: if current voltage is under target, will return positive value
@@ -78,7 +76,7 @@ public:
 	// maximum size of requested adjustment is 20
 	// no time delay
 	// a modified proportional (P) controller 
-	
+
 	int8_t algoMPPT(float Kp, uint8_t scaledSoftIlimit);
 	// from current state variables, returns the requested adjustment to duty cycle
 	// maximum size of requested adjustment is 1
@@ -87,14 +85,14 @@ public:
 	// no time delay
 	// updates prevPower and prevAdjustment for next iteration
 
-	
 
 
-	// TO BE REFACTORED USING ABOVE HELPERS
+
+	// TO BE IMPLEMENTED IN MAIN USING ABOVE HELPERS
 	// For all the following, if overcurrent condition persists, will disengage charger (logic to be in Protection)
 	// and return 0 if nominal operation, 1 if load disconnected, 2 if Vds too low under load (e.g. <3.5V, >100mA), 3 if overcurrent
 	// Each adjusts the duty cycle of the PWM running in SolChgCtrlMain
-	
+
 	//uint8_t runSLA(uint8_t stage, float Itarget, float Vtarget, float VtargetFC, float Ilimit);
 	// charge procedure for sealed lead acid; stages are
 	// 1 - Constant current at Itarget input current or lower, MPPT tracking enabled, transfer to 2 when reaching Vtarget
@@ -108,5 +106,6 @@ public:
 	// 2 - Constant voltage at Vtarget until current < 5% of Itarget or Vds threshold is reached
 	*/
 };
+
 
 #endif

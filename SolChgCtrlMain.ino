@@ -15,11 +15,12 @@ void setup() {
     // 2 = Vds below safety limit, 3 = overcurrent/fatal
     uint8_t chargerFault = 0;
 
-    // mode, by default is 0 = Lead acid charging, 1 = Manual override as constant voltage source, 2 ...
-    uint8_t chargerMode = 0;
+    // mode, by default is 0 = Lead acid charging, 1 = Manual override as constant voltage source
+    uint8_t chargerMode = 1;
 
     //setup input; assumes pull down
     pinMode(default_inputPin, INPUT);
+    pinMode(default_modePin, INPUT);
 
     // initialize relay off
     digitalWrite(default_battEnable, LOW);
@@ -40,13 +41,13 @@ void loop() {
     // TODO, will set chargerMode to appropriate value based on user input
 
     // check status
-    bool engage = startOK(cutoffLow[chargerMode], cutoffHigh[chargerMode], default_battADCscale, default_battVpin, chargerFault);
+    bool engage = Protection::startOK(cutoffLow[chargerMode], cutoffHigh[chargerMode], default_battADCscale, default_battVpin, chargerFault);
     // either disengage or engage charger; disengaging will delay for 5 seconds before returning to this loop
     // engage will transfer control to charging, which will return to this loop when it decides to disconnect battery
     switch (engage) {
-        case 0:
-            Serial.println("INFO: Disengaging charger")
-            disengage(default_battEnable, default_PWMpin, &duty);
+        case false:
+            Serial.println("INFO: Disengaging charger");
+            Protection::disengage(default_battEnable, default_PWMpin, &duty);
             // clear charger fault except for fault state 3
             if (chargerFault != 3) {
                 chargerFault = 0;
@@ -57,19 +58,12 @@ void loop() {
                 delay(30000);
             }
             break;
-        case 1:
-            digitalWrite(default_battEnable, HIGH);
-            duty = 128; // start at around 50%
-            //need to rewrite this section to handle different modes
-            Serial.println("INFO:")
+        case true:
+            Protection::engage(default_battEnable, default_PWMpin, &duty);
+            
+            // check 
+            Serial.println("INFO:");
             chargerFault = runCharger(); //WIP
-            break;
-        default:
-            // something weird happened, just stop
-            Serial.println("WARNING: Undefined behavior")
-            disengage(default_battEnable, default_PWMpin, &duty);
-            // and stop everything afterwards
-            chargerFault = 3;
             break;
     }
 

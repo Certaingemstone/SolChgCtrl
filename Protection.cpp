@@ -1,6 +1,8 @@
 #include "Protection.h"
 
-void disengage(uint8_t battEnable, uint8_t PWMpin, uint8_t* dutyPtr) {
+using namespace Protection;
+
+void Protection::disengage(uint8_t battEnable, uint8_t PWMpin, uint8_t* dutyPtr) {
 	// disconnect battery
 	digitalWrite(battEnable, LOW);
 	// set so that PWMpin is always on, so MOSFET turns off
@@ -9,7 +11,7 @@ void disengage(uint8_t battEnable, uint8_t PWMpin, uint8_t* dutyPtr) {
 	delay(5000);
 }
 
-void engage(uint8_t battEnable, uint8_t PWMpin, uint8_t* dutyPtr)
+void Protection::engage(uint8_t battEnable, uint8_t PWMpin, uint8_t* dutyPtr)
 {
 	// set duty cycle to a guessed value
 	*dutyPtr = 100;
@@ -17,7 +19,7 @@ void engage(uint8_t battEnable, uint8_t PWMpin, uint8_t* dutyPtr)
 	digitalWrite(battEnable, HIGH);
 }
 
-bool startOK(int cutoffLow, int cutoffHigh, float battADCscale, float panelADCscale, uint8_t battVpin, uint8_t panelVpin, uint8_t chargerFault)
+bool Protection::startOK(int cutoffLow, int cutoffHigh, float battADCscale, float panelADCscale, uint8_t battVpin, uint8_t panelVpin, uint8_t chargerFault)
 {
 	bool engage = 0;
 	float Vbatt = analogRead(battVpin) * battADCscale;
@@ -33,7 +35,7 @@ bool startOK(int cutoffLow, int cutoffHigh, float battADCscale, float panelADCsc
 }
 
 
-uint8_t runtimeOK(uint8_t chargerMode, Charger charger, uint8_t * VviolationsPtr, uint8_t * IviolationsPtr, 
+uint8_t Protection::runtimeOK(uint8_t chargerMode, Charger charger, uint8_t * VviolationsPtr, uint8_t * IviolationsPtr,
 	uint8_t cutoffVLow, uint8_t cutoffVHigh, uint8_t cutoffI, 
 	uint8_t VviolationsLim, uint8_t IviolationsLim, uint8_t Vdsmin)
 {

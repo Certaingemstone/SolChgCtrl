@@ -4,6 +4,7 @@
 // MODE-SPECIFIC CONSTANTS
 // pin on which to take user input
 static const uint8_t default_inputPin = 1;
+static const uint8_t default_modePin = 2;
 
 // voltage at which to turn relay on or off
 static const int cutoffLow[] = { 9, -1 }; // [0] for lead acid, [1] for manual
@@ -37,7 +38,7 @@ static const uint8_t default_battEnable = 12;
 // some useful values
 static const float default_battADCscale = ADCunit * battVdivider; // multiply by ADC reading on batt divider to get full voltage (V)
 static const float default_panelADCscale = ADCunit * panelVdivider; // " " but with panel divider, to get full voltage across panel
-static const float default_currentADCscale = ADCunit * currentdivider;
-// multiply by ADC reading on shunt differential amplifier to get current (A) through input side
+static const float default_currentADCscale = ADCunit * currentdivider; // multiply by ADC reading on shunt differential amplifier to get current (A) through input side
+
 
 #endif
