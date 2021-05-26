@@ -24,14 +24,22 @@ bool Protection::startOK(int cutoffLow, int cutoffHigh, float battADCscale, floa
 {
 	bool engage = 0;
 	float Vbatt = analogRead(battVpin) * battADCscale;
+  float Vpanel = analogRead(panelVpin) * panelADCscale;
 	// if between cutoffLow-cutoffHigh V, and no fault during charger control,
-	if (Vbatt >= cutoffLow && Vbatt < cutoffHigh && chargerFault == 0) {
+	if ((Vbatt > cutoffLow) && (Vbatt < cutoffHigh) && (chargerFault == 0)) {
 		// check Vds; if okay, engage
-		float Vpanel = analogRead(panelVpin) * panelADCscale;
 		if (Vpanel - Vbatt > 5) {
 			engage = 1;
 		}
+	  else {
+      Serial.println("Vds insufficient");
+	  }
 	}
+	else {
+    Serial.println("Output side voltage outside cutoff range or charger fault state");
+	}
+	Serial.print("Vin:"); Serial.println(Vpanel); Serial.print("Vout:"); Serial.println(Vbatt); 
+
 	return engage;
 }
 
@@ -72,5 +80,3 @@ uint8_t Protection::runtimeOK(Charger charger, uint8_t * VviolationsPtr, uint8_t
 
 	return chargerFault;
 }
-
-

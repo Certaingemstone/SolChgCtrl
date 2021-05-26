@@ -37,13 +37,15 @@ void loop() {
     static uint8_t chargerFault;
     // mode, by default is 0 = Lead acid charging, 1 = Manual override as constant voltage source
     static uint8_t chargerMode;
+
+    chargerMode = 1; //TEMPORARY
     
     // reset charger state
     charger.resetMPPT();
     charger.updateState();
 
     // check status
-    bool engage = Protection::startOK(cutoffLow[chargerMode], cutoffHigh[chargerMode], default_battADCscale, default_battVpin, chargerFault);
+    bool engage = Protection::startOK(cutoffLow[chargerMode], cutoffHigh[chargerMode], default_battADCscale, default_panelADCscale, default_battVpin, default_panelVpin, chargerFault);
     switch (engage) {
         case false:
             Serial.println("INFO: Not starting");
@@ -53,7 +55,7 @@ void loop() {
             // clear charger fault except for fault state 3
             if (chargerFault != 3) {
                 chargerFault = 0;
-                delay(1000); // re run check 1 second later
+                delay(10000); // re run check 10 second later
             } 
             else {
                 Serial.println("WARNING: Overcurrent");
@@ -67,7 +69,6 @@ void loop() {
             uint8_t Iviolations = 0;
             bool running = true;
             //CV
-            chargerMode = 1; //TEMPORARY
             if (chargerMode == 1) {
                 Protection::engage(default_battEnable, default_PWMpin, &duty);
                 while (running) {
@@ -91,7 +92,7 @@ void loop() {
             }
             Serial.println("INFO: Disengaging");
             Protection::disengage(default_battEnable, default_PWMpin, &duty);
-            delay(10000)
+            delay(10000);
             break;
     }
 

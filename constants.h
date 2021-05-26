@@ -7,8 +7,8 @@ static const uint8_t default_inputPin = 6;
 static const uint8_t default_modePin = 7;
 
 // voltage at which to turn relay on or off
-static const int cutoffLow[] = { 9, -1 }; // [0] for lead acid, [1] for manual
-static const int cutoffHigh[] = { 15, 15 }; // no minimum on OCV at output during manual override
+static const float cutoffLow[] = { 9, -1 }; // [0] for lead acid, [1] for manual
+static const float cutoffHigh[] = { 15, 15 }; // no minimum on OCV at output during manual override
 
 // target voltage for lead acid charge constant voltage output
 static const float default_Vtarget = 14.1; // 2.35V per cell

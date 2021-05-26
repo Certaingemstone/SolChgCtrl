@@ -1,10 +1,7 @@
 #include "Charger.h"
 
-Charger::Charger(uint8_t* dutyPtrIn, uint8_t panelVpinIn, uint8_t panelIpinIn, uint8_t battVpinIn)
+Charger::Charger(uint8_t* dutyPtrIn, uint8_t panelVpinIn, uint8_t panelIpinIn, uint8_t battVpinIn) : dutyPtr(dutyPtrIn), panelVpin(panelVpinIn), panelIpin(panelIpinIn), battVpin(battVpinIn)
 {
-    dutyPtr = dutyPtrIn; panelVpin = panelVpinIn; 
-    panelIpin = panelIpinIn; battVpin = battVpinIn;
-
     prevPower = 0; prevAdjustment = false; panelV = 0; panelI = 0; battV = 0;
 }
 
@@ -24,7 +21,8 @@ void Charger::resetMPPT()
 
 bool Charger::updateDuty(int8_t adjustmentIn, bool invert)
 {   
-    adjustment = (invert) ? -adjustmentIn : adjustmentIn;
+    int8_t adjustment = (invert) ? -adjustmentIn : adjustmentIn;
+    uint8_t margin = 10;
     bool success = false;
     // apply adjustment to duty cycle
     if (adjustment < 0) {
@@ -133,4 +131,3 @@ int8_t Charger::stepMPPT(float Kp, uint16_t scaledSoftIlimit)
     return adj;
 
 }
-
