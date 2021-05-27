@@ -72,15 +72,30 @@ void loop() {
             
             //Sealed Lead Acid
             if (chargerMode == 0) {
-              // tracking which stage of charging we're in
-              uint8_t chargeStage = 1; // 0 = CC , 1 = CV, 2 = FLOAT
-              charger.updateState(); // get updated state measurements
-              if (charger.// check OCV
-              Protection::engage(default_battEnable, default_PWMpin, &duty);
-              while (running) {
-                charger.updateState(); 
-                
-              }
+                // tracking which stage of charging we're in
+                uint8_t chargeStage = 1; // 0 = CC , 1 = CV, 2 = FLOAT
+                charger.updateState(); // get updated state measurements
+                // do OCV check if below float threshold, if so start on CC, TODO: define threshold at 2.1V/cell
+                if (charger.battV < default_VtargetFC_Scaled) { // TODO: need to convert to ADC units
+                    chargerMode = 0;
+                }
+                // if above threshold, just start on float
+                // if above float target, don't engage until below float
+
+                while (running) {
+                    switch (chargerMode) {
+                        case 0:
+                            Protection::engage(default_battEnable, default_PWMpin, &duty);
+                            Serial.println("Placeholder CC");
+                        case 1:
+                            Serial.println("Placeholder CV");
+                        case 2:
+                            Serial.println("Placeholder FLOAT");
+                            break;
+                        default:
+                            Serial.println("ERROR: Undefined charge stage");
+                    }
+                }
             }
             
             //CV
