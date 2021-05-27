@@ -67,12 +67,27 @@ void loop() {
             chargerFault = 0;
             uint8_t Vviolations = 0;
             uint8_t Iviolations = 0;
+            
             bool running = true;
+            
+            //Sealed Lead Acid
+            if (chargerMode == 0) {
+              // tracking which stage of charging we're in
+              uint8_t chargeStage = 1; // 0 = CC , 1 = CV, 2 = FLOAT
+              charger.updateState(); // get updated state measurements
+              if (charger.// check OCV
+              Protection::engage(default_battEnable, default_PWMpin, &duty);
+              while (running) {
+                charger.updateState(); 
+                
+              }
+            }
+            
             //CV
             if (chargerMode == 1) {
                 Protection::engage(default_battEnable, default_PWMpin, &duty);
                 while (running) {
-                    charger.updateState(); // get updated state measurements
+                    charger.updateState();
                     charger.updateDuty(charger.stepCV(CV_Kp, VADC_12), true); // get and apply proposed duty cycle step size
                     analogWrite(default_PWMpin, duty);
                     // 100 -> 2.14V, 1000 -> 21.14V (tolerate basically all output voltages)
