@@ -62,11 +62,11 @@ uint8_t Protection::runtimeOK(Charger charger, uint8_t * VviolationsPtr, uint8_t
 		chargerFault = 1;
 	}
 	
-	// check for Vds too low
-	if (Vin - Vout < Vdsmin) {
+	// check for Vds too low with significant current ( >= 3ADC, or 75mA )
+	if ((Vin - Vout < Vdsmin) && Iin > 2) {
 		chargerFault = 2;
 	}
-	if (Vin <= Vout) {
+	else if (Vin <= Vout) {
 		chargerFault = 2; // needed to handle Vin < Vout, where Vin-Vout may be large due to uint subtraction
 	}
 
