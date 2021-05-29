@@ -18,8 +18,8 @@ static const float default_VtargetFC = 13.5; // float charge 2.25V per cell
 static const float default_Itarget = 1.0; // a bit above C/8 for 8Ah battery
 
 // control loop tuning parameters
-static const float CV_Kp = 1.0;
-static const float CC_Kp = 1.0;
+static const float CV_Kp = 0.05;
+static const float CC_Kp = 0.05;
 
 // SYSTEM CONSTANTS
 // ideal (uncalibrated) size of one ADC step (5/1024) since ADC goes from 0-1023
@@ -46,7 +46,7 @@ static const float default_currentADCscale = ADCunit * currentdivider; // multip
 
 // (0.0213Vin/ADCunit)
 // (.0244Ain/ADCunit)
-static const uint16_t VADC_12 = 559; // for 12V output: 12V/battADCscale = 559 (0.0214Vout/ADCunit)
+static const uint16_t VADC_12 = 700; // for 12V output: 12V/battADCscale = 559 (0.0214Vout/ADCunit)
 
 
 #endif

@@ -34,7 +34,7 @@ void loop() {
     
     // 0 = nominal or manual exit, 1 = battery disconnected unexpectedly/voltage anomaly, 
     // 2 = Vds below safety limit, 3 = overcurrent/fatal
-    static uint8_t chargerFault;
+    static uint8_t chargerFault = 0;
     // mode, by default is 0 = Lead acid charging, 1 = Manual override as constant voltage source
     static uint8_t chargerMode;
 
@@ -69,7 +69,8 @@ void loop() {
             uint8_t Iviolations = 0;
             
             bool running = true;
-            
+
+            /*
             //Sealed Lead Acid
             if (chargerMode == 0) {
                 // tracking which stage of charging we're in
@@ -97,19 +98,27 @@ void loop() {
                     }
                 }
             }
+            */
             
-            //CV
+            //CV, change to else if once SLA routine implemented
             if (chargerMode == 1) {
                 Protection::engage(default_battEnable, default_PWMpin, &duty);
                 while (running) {
                     charger.updateState();
+                    //Serial.println("Duty: ");
+                    //Serial.println(duty);
+                    //Serial.println("In voltage: ");
+                    //Serial.println(charger.getInVoltage());
+                    //Serial.println("Out voltage: ");
+                    //Serial.println(charger.getOutVoltage());
+                    Serial.println(charger.getCurrent());
                     charger.updateDuty(charger.stepCV(CV_Kp, VADC_12), true); // get and apply proposed duty cycle step size
                     analogWrite(default_PWMpin, duty);
                     // 100 -> 2.14V, 1000 -> 21.14V (tolerate basically all output voltages)
-                    // 50 -> 1.2A max
+                    // 105 -> 2.5A max
                     // 160 -> 3.4Vds min
                     chargerFault = Protection::runtimeOK(charger, &Vviolations, &Iviolations, 
-                        100, 1000, 50, 50, 30, 160);
+                        100, 1000, 105, 50, 30, 20);
                     if (chargerFault != 0) {
                         running = false;
                     }
