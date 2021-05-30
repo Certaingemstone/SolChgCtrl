@@ -38,7 +38,7 @@ bool Protection::startOK(int cutoffLow, int cutoffHigh, float battADCscale, floa
 	else {
     Serial.println("Output side voltage outside cutoff range or charger fault state");
 	}
-	Serial.print("Vin:"); Serial.println(Vpanel); Serial.print("Vout:"); Serial.println(Vbatt); 
+	Serial.print("Vin: "); Serial.println(Vpanel); Serial.print("Vout: "); Serial.println(Vbatt); 
 
 	return engage;
 }
@@ -58,12 +58,15 @@ uint8_t Protection::runtimeOK(Charger charger, uint8_t * VviolationsPtr, uint8_t
 	if (Vout < cutoffVLow || Vout > cutoffVHigh) {
 		*VviolationsPtr = *VviolationsPtr + 1;
 	}
+	else {
+		*VviolationsPtr = 0; // reset if back in range
+	}
 	if (*VviolationsPtr > VviolationsLim) {
 		chargerFault = 1;
 	}
 	
-	// check for Vds too low with significant current ( >= 3ADC, or 75mA )
-	if ((Vin - Vout < Vdsmin) && Iin > 2) {
+	// check for Vds too low with significant current ( >= 6ADC, or 150mA; Arduino Pro Mini draws around 70mA by itself )
+	if ((Vin - Vout < Vdsmin) && Iin > 5) {
 		chargerFault = 2;
 	}
 	else if (Vin <= Vout) {
@@ -73,6 +76,9 @@ uint8_t Protection::runtimeOK(Charger charger, uint8_t * VviolationsPtr, uint8_t
 	// check for current over limit (i.e. near Isc of array for MPPT mode, or specific limit for others)
 	if (Iin > cutoffI) {
 		*IviolationsPtr = *IviolationsPtr + 1;
+	}
+	else {
+		*IviolationsPtr = 0; // reset if back in range
 	}
 	if (*IviolationsPtr > IviolationsLim) {
 		chargerFault = 3;

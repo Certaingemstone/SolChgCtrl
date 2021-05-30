@@ -70,35 +70,61 @@ void loop() {
             
             bool running = true;
 
-            /*
+            // For all the following, if overcurrent condition persists, will disengage charger (logic to be in Protection)
+            // and set chargerFault 0 if nominal, 1 if load disconnected, 2 if Vds too low under load (e.g. <3.5V, >100mA), 3 if overcurrent
+
+            //uint8_t runSLA(uint8_t stage, float Itarget, float Vtarget, float VtargetFC, float Ilimit);
+            // charge procedure for sealed lead acid; stages are
+            // 1 - Constant current at Itarget input current or lower, MPPT tracking enabled, transfer to 2 when reaching Vtarget
+            // 2 - Constant voltage at Vtarget, transfer to 3 when current < 15% of Itarget
+            // 3 - Float at VtargetFC until Vds threshold is reached (i.e. insufficient input voltage available)
+
+            //uint8_t runLiIon(uint8_t stage, float Itarget, float Vtarget, float Ilimit);
+            // charge procedure for sealed lead acid; stages are
+            // 1 - Constant current at Itarget input current or lower
+            // 2 - Constant voltage at Vtarget until current < 5% of Itarget or Vds threshold is reached
+            
             //Sealed Lead Acid
             if (chargerMode == 0) {
-                // tracking which stage of charging we're in
-                uint8_t chargeStage = 1; // 0 = CC , 1 = CV, 2 = FLOAT
+                // deciding which stage of charging we're starting on
+                uint8_t chargeStage = 1; // 0 = CC , 1 = CV, 2 = FLOAT, 3 = IDLE
                 charger.updateState(); // get updated state measurements
-                // do OCV check if below float threshold, if so start on CC, TODO: define threshold at 2.1V/cell
-                if (charger.battV < default_VtargetFC_Scaled) { // TODO: need to convert to ADC units
+                // do OCV check if starting at/below float threshold, if so start on CC and go through whole process
+                if (charger.battV <= default_VtargetFC) {
                     chargerMode = 0;
                 }
-                // if above threshold, just start on float
+                // if starting above float target 
+                
                 // if above float target, don't engage until below float
-
+                
+                Protection::engage(default_battEnable, default_PWMpin, &duty); 
                 while (running) {
+                    
                     switch (chargerMode) {
                         case 0:
-                            Protection::engage(default_battEnable, default_PWMpin, &duty);
                             Serial.println("Placeholder CC");
                         case 1:
                             Serial.println("Placeholder CV");
                         case 2:
                             Serial.println("Placeholder FLOAT");
                             break;
+                        case 3:
+                            Serial.println("Placeholder IDLE")
                         default:
                             Serial.println("ERROR: Undefined charge stage");
+                            running = false;
+                            break;
+                    }
+                    
+                    if (chargerFault != 0) {
+                        running = false;
+                    }
+                    if (digitalRead(default_inputPin) == HIGH) {
+                        running = false;
                     }
                 }
             }
-            */
+            
             
             //CV, change to else if once SLA routine implemented
             if (chargerMode == 1) {
@@ -119,6 +145,7 @@ void loop() {
                     // 160 -> 3.4Vds min
                     chargerFault = Protection::runtimeOK(charger, &Vviolations, &Iviolations, 
                         100, 1000, 105, 50, 30, 20);
+                    
                     if (chargerFault != 0) {
                         running = false;
                     }
