@@ -43,6 +43,9 @@ static const float cutoffHigh[] = { 15, 15 }; // no minimum on OCV at output dur
 static const uint16_t default_Vtarget = (uint16_t)(14.1 / default_battADCscale); // 2.35V per cell
 static const uint16_t default_VtargetFC = (uint16_t)(13.5 / default_battADCscale); // float charge 2.25V per cell
 
+// for lead acid charge, the point when the battery is considered "discharged"
+static const uint16_t default_VfastChargeCutoff = (uint16_t)(12.3 / default_battADCscale); // approx 50% SOC cutoff, 2.05V
+
 // target/limit current on input side for lead acid
 static const uint16_t default_Itarget = (uint16_t)(1.0 / default_currentADCscale); // a bit above C/8 for 8Ah battery
 

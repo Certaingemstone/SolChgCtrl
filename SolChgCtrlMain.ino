@@ -89,27 +89,57 @@ void loop() {
                 // deciding which stage of charging we're starting on
                 uint8_t chargeStage = 1; // 0 = CC , 1 = CV, 2 = FLOAT, 3 = IDLE
                 charger.updateState(); // get updated state measurements
-                // do OCV check if starting at/below float threshold, if so start on CC and go through whole process
-                if (charger.battV <= default_VtargetFC) {
-                    chargerMode = 0;
+                // do OCV checks: 
+                // if starting below fast charge cutoff, start on current-limited MPPT and go through whole process
+                // if starting between that and float target, start on constant-voltage float
+                // if starting above float target, don't engage until below float
+                if (charger.battV < default_VfastChargeCutoff) {
+                    chargeStage = 0;
+                    Serial.println("INFO: Charger engaging with mode MPPT");
                 }
-                // if starting above float target 
+                else if (charger.battV < default_VtargetFC) {
+                    chargeStage = 2;
+                    Serial.println("INFO: Charger engaging with mode FLOAT");
+                }
+                else {
+                    chargeStage = 3;
+                }
                 
-                // if above float target, don't engage until below float
+                
                 
                 Protection::engage(default_battEnable, default_PWMpin, &duty); 
                 while (running) {
                     
-                    switch (chargerMode) {
+                    switch (chargeStage) {
                         case 0:
-                            Serial.println("Placeholder CC");
+                            // TODO: Implement MPPT client
+                            // TODO: Implement condition for transitioning
+                                chargeStage = 1;
+                                Serial.println("INFO: Charger switching to mode CV");
                         case 1:
-                            Serial.println("Placeholder CV");
+                            // TODO: Implement CV client
+                            // TODO: Implement condition for transitioning
+                                chargeStage = 2;
+                                Serial.println("INFO: Charger switching to mode FLOAT");
                         case 2:
-                            Serial.println("Placeholder FLOAT");
+                            charger.updateState();
+                            Serial.println(charger.getCurrent());
+                            charger.updateDuty(charger.stepCV(CV_Kp, default_VtargetFC), true);
+                            analogWrite(default_PWMpin, duty);
+                            // cutoffLow: 560 / 12V    cutoffHigh: 660 / 14.1V
+                            // cutoffI: 105 / 2.5A
+                            chargerFault = Protection::runtimeOK(charger, &Vviolations, &Iviolations,
+                                560, 660, 105, 300, 30, 160);
                             break;
                         case 3:
-                            Serial.println("Placeholder IDLE")
+                            // Idle until at or below float again
+                            Serial.println("INFO: Charger idle, initial voltage over float target");
+                            delay(5000);
+                            if (charger.battV <= default_VtargetFC) {
+                                chargeStage = 2;
+                                Serial.println("INFO: Charger switching to mode FLOAT");
+                            }
+
                         default:
                             Serial.println("ERROR: Undefined charge stage");
                             running = false;
@@ -126,7 +156,6 @@ void loop() {
             }
             
             
-            //CV, change to else if once SLA routine implemented
             if (chargerMode == 1) {
                 Protection::engage(default_battEnable, default_PWMpin, &duty);
                 while (running) {
@@ -144,7 +173,7 @@ void loop() {
                     // 105 -> 2.5A max
                     // 160 -> 3.4Vds min
                     chargerFault = Protection::runtimeOK(charger, &Vviolations, &Iviolations, 
-                        100, 1000, 105, 50, 30, 20);
+                        100, 1000, 105, 300, 30, 160);
                     
                     if (chargerFault != 0) {
                         running = false;
