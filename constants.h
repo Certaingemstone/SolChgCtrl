@@ -47,7 +47,7 @@ static const uint16_t default_VtargetFC = (uint16_t)(13.5 / default_battADCscale
 static const uint16_t default_VfastChargeCutoff = (uint16_t)(12.3 / default_battADCscale); // approx 50% SOC cutoff, 2.05V
 
 // target/limit current on input side for lead acid
-static const uint16_t default_Itarget = (uint16_t)(1.0 / default_currentADCscale); // a bit above C/8 for 8Ah battery
+static const uint16_t default_Itarget = (uint16_t)(0.4 / default_currentADCscale); // a bit above C/20 for 8Ah battery
 
 // control loop tuning parameters
 static const float CV_Kp = 0.05;

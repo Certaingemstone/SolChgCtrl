@@ -103,7 +103,7 @@ int8_t Charger::stepCC(float Kp, uint16_t scaledItarget)
 }
 
 //this is sketchy, should test
-int8_t Charger::stepMPPT(float Kp, uint16_t scaledSoftIlimit)
+int8_t Charger::stepMPPT(uint16_t scaledSoftIlimit)
 {
     int8_t adj = 0;
     // calculate current power (in ADC units)

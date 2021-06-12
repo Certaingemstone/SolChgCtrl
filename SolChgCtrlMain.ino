@@ -96,32 +96,50 @@ void loop() {
                 if (charger.battV < default_VfastChargeCutoff) {
                     chargeStage = 0;
                     Serial.println("INFO: Charger engaging with mode MPPT");
+                    Protection::engage(default_battEnable, default_PWMpin, &duty);
                 }
                 else if (charger.battV < default_VtargetFC) {
                     chargeStage = 2;
                     Serial.println("INFO: Charger engaging with mode FLOAT");
+                    Protection::engage(default_battEnable, default_PWMpin, &duty);
                 }
                 else {
                     chargeStage = 3;
-                }
+                } 
                 
-                
-                
-                Protection::engage(default_battEnable, default_PWMpin, &duty); 
                 while (running) {
-                    
+                    // TODO: Perform minimum current check to see if battery is connected
                     switch (chargeStage) {
                         case 0:
-                            // TODO: Implement MPPT client
-                            // TODO: Implement condition for transitioning
+                            charger.updateState();
+                            charger.updateDuty(charger.stepMPPT(50)); // current soft limit at around 1A
+                            analogWrite(default_PWMpin, duty);
+                            // cutoffLow: 420 / 9V    cutoffHigh: 700 / 15V
+                            // cutoffI: 105 / 2.5A OR 0.25C, whichever happens first
+                            chargerFault = Protection::runtimeOK(charger, &Vviolations, &Iviolations,
+                                420, 700, 105, 300, 30, 160);
+                            // Transition based on reaching target 14.1V
+                            if (charger.battV >= 660) {
                                 chargeStage = 1;
                                 Serial.println("INFO: Charger switching to mode CV");
+                            }
                         case 1:
-                            // TODO: Implement CV client
-                            // TODO: Implement condition for transitioning
+                            // CV to peak charge voltage
+                            charger.updateState();
+                            Serial.println(charger.getCurrent());
+                            charger.updateDuty(charger.stepCV(CV_Kp, default_Vtarget), true);
+                            analogWrite(default_PWMpin, duty);
+                            // cutoffLow: 470 / 10V    cutoffHigh: 680 / 14.5V
+                            // cutoffI: 105 / 2.5A
+                            chargerFault = Protection::runtimeOK(charger, &Vviolations, &Iviolations,
+                                560, 660, 105, 300, 30, 160);
+                            // Transition based on current < 0.05C (i.e. 400mA for 8Ah)
+                            if (charger.getCurrent() < default_Itarget) {
                                 chargeStage = 2;
                                 Serial.println("INFO: Charger switching to mode FLOAT");
+                            }                           
                         case 2:
+                            // CV at float voltage
                             charger.updateState();
                             Serial.println(charger.getCurrent());
                             charger.updateDuty(charger.stepCV(CV_Kp, default_VtargetFC), true);
@@ -138,6 +156,7 @@ void loop() {
                             if (charger.battV <= default_VtargetFC) {
                                 chargeStage = 2;
                                 Serial.println("INFO: Charger switching to mode FLOAT");
+                                Protection::engage(default_battEnable, default_PWMpin, &duty);
                             }
 
                         default:

@@ -77,7 +77,7 @@ public:
 
 	// from current state variables, returns the requested adjustment to duty cycle
 	// sign: same as CV and CC
-	int8_t stepMPPT(float Kp, uint16_t scaledSoftIlimit);
+	int8_t stepMPPT(uint16_t scaledSoftIlimit);
 	// maximum size of requested adjustment is 1
 	// a perturb-and-observe MPPT implementation
 	// no time delay
