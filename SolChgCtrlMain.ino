@@ -67,6 +67,7 @@ void loop() {
             chargerFault = 0;
             uint8_t Vviolations = 0;
             uint8_t Iviolations = 0;
+            // to track 
             
             bool running = true;
 
@@ -108,7 +109,12 @@ void loop() {
                 } 
                 
                 while (running) {
-                    // TODO: Perform minimum current check to see if battery is connected
+                    // if basically no current is running (reading <24mA), battery has likely been disconnected
+                    // incrementing Vviolations to return state 1
+                    // make sure the LM7805 is connected upstream of the shunt to avoid measuring the Arduino's 60-70mA draw
+                    if (charger.panelI < 1) {
+                        Vviolations = Vviolations + 1;
+                    }
                     switch (chargeStage) {
                         case 0:
                             charger.updateState();

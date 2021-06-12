@@ -65,7 +65,7 @@ uint8_t Protection::runtimeOK(Charger charger, uint8_t * VviolationsPtr, uint8_t
 		chargerFault = 1;
 	}
 	
-	// check for Vds too low with significant current ( >= 6ADC, or 150mA; Arduino Pro Mini draws around 70mA by itself )
+	// check for Vds too low with significant current ( >= 6ADC, or 150mA )
 	if ((Vin - Vout < Vdsmin) && Iin > 5) {
 		chargerFault = 2;
 	}
