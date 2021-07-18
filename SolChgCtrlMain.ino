@@ -38,7 +38,7 @@ void loop() {
     // mode, by default is 0 = Lead acid charging, 1 = Manual override as constant voltage source
     static uint8_t chargerMode;
 
-    chargerMode = 1; //TEMPORARY
+    chargerMode = 2; //TEMPORARY
     
     // reset charger state
     charger.resetMPPT();
@@ -208,6 +208,39 @@ void loop() {
                     delay(10);
                 }
                 
+            }
+
+            
+            if (chargerMode == 2) {
+                Protection::engage(default_battEnable, default_PWMpin, &duty);
+                uint16_t voltages[8] = { 280, 328, 374, 421, 467, 514, 561, 607 }; // 6,7,8,9,10,11,12,13
+                uint16_t ct1 = 0;
+                uint16_t ct2 = 0;
+                while (running) {
+                    ct1 = ct1 + 1;
+                    if (ct1 > 1000) {
+                        ct2 = ct2 + 1;
+                        ct1 = 0;
+                    }
+                    if (ct2 > 7) {
+                        ct2 = 0;
+                    }
+                    charger.updateState();
+                    charger.updateDuty(charger.stepCV(CV_Kp, voltages[ct2]), true); // get and apply proposed duty cycle step size
+                    analogWrite(default_PWMpin, duty);
+                    // 100 -> 2.14V, 1000 -> 21.14V (tolerate basically all output voltages)
+                    // 105 -> 2.5A max
+                    // 160 -> 3.4Vds min
+                    chargerFault = Protection::runtimeOK(charger, &Vviolations, &Iviolations,
+                        100, 1000, 105, 300, 30, 160);
+                    if (chargerFault != 0) {
+                        running = false;
+                    }
+                    if (digitalRead(default_inputPin) == HIGH) {
+                        running = false;
+                    }
+                    delay(10);
+                }
             }
             Serial.println("INFO: Disengaging");
             Protection::disengage(default_battEnable, default_PWMpin, &duty);
