@@ -36,8 +36,8 @@ static const uint16_t VADC_12 = 700; // for 12V output: 12V/battADCscale = 559 (
 
 // ---- SETTINGS ----
 // voltage at which to turn relay on or off
-static const float cutoffLow[] = { 9, -1 }; // [0] for lead acid, [1] for manual
-static const float cutoffHigh[] = { 15, 15 }; // no minimum on OCV at output during manual override
+static const float cutoffLow[] = { 9, -1, -1 }; // [0] for lead acid, [1] for manual
+static const float cutoffHigh[] = { 15, 15, 18 }; // no minimum on OCV at output during manual override
 
 // target voltage for lead acid charge constant voltage output
 static const uint16_t default_Vtarget = (uint16_t)(14.1 / default_battADCscale); // 2.35V per cell
@@ -50,7 +50,7 @@ static const uint16_t default_VfastChargeCutoff = (uint16_t)(12.3 / default_batt
 static const uint16_t default_Itarget = (uint16_t)(0.4 / default_currentADCscale); // a bit above C/20 for 8Ah battery
 
 // control loop tuning parameters
-static const float CV_Kp = 0.05;
+static const float CV_Kp = 0.3; // adjust duty if > 3 ADC units (0.06V) away from target 
 static const float CC_Kp = 0.05; // not yet tuned
 
 

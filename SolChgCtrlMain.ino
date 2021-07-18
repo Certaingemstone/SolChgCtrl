@@ -55,7 +55,7 @@ void loop() {
             // clear charger fault except for fault state 3
             if (chargerFault != 3) {
                 chargerFault = 0;
-                delay(10000); // re run check 10 second later
+                delay(5000); // re run check 5 second later
             } 
             else {
                 Serial.println("WARNING: Overcurrent");
@@ -199,14 +199,13 @@ void loop() {
                     // 160 -> 3.4Vds min
                     chargerFault = Protection::runtimeOK(charger, &Vviolations, &Iviolations, 
                         100, 1000, 105, 300, 30, 160);
-                    
                     if (chargerFault != 0) {
                         running = false;
                     }
                     if (digitalRead(default_inputPin) == HIGH) {
                         running = false;
                     }
-                    
+                    delay(10);
                 }
                 
             }
