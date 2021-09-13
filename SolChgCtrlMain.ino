@@ -35,17 +35,17 @@ void loop() {
     // 0 = nominal or manual exit, 1 = battery disconnected unexpectedly/voltage anomaly, 
     // 2 = Vds below safety limit, 3 = overcurrent/fatal
     static uint8_t chargerFault = 0;
-    // mode, by default is 0 = Lead acid charging, 1 = Manual override as constant voltage source
+    // mode, by default is 0 = Lead acid charging, 1 = Manual override as constant voltage source, 2 = Calibration with different duty cycles, 3 = Dumb fixed duty cycle
     static uint8_t chargerMode;
 
-    chargerMode = 2; //TEMPORARY
+    chargerMode = 3; //TEMPORARY
     
     // reset charger state
     charger.resetMPPT();
     charger.updateState();
 
     // check status
-    bool engage = Protection::startOK(cutoffLow[chargerMode], cutoffHigh[chargerMode], default_battADCscale, default_panelADCscale, default_battVpin, default_panelVpin, chargerFault);
+    bool engage = Protection::startOK(cutoffLowStart[chargerMode], cutoffHighStart[chargerMode], default_battADCscale, default_panelADCscale, default_battVpin, default_panelVpin, chargerFault);
     switch (engage) {
         case false:
             Serial.println("INFO: Not starting");
@@ -183,29 +183,35 @@ void loop() {
             
             if (chargerMode == 1) {
                 Protection::engage(default_battEnable, default_PWMpin, &duty);
+                uint16_t ct = 0;
                 while (running) {
                     charger.updateState();
-                    //Serial.println("Duty: ");
-                    //Serial.println(duty);
-                    //Serial.println("In voltage: ");
-                    //Serial.println(charger.getInVoltage());
-                    //Serial.println("Out voltage: ");
-                    //Serial.println(charger.getOutVoltage());
-                    Serial.println(charger.getCurrent());
-                    charger.updateDuty(charger.stepCV(CV_Kp, VADC_12), true); // get and apply proposed duty cycle step size
+                    ++ct;
+                    if (ct > 100) {
+                        Serial.println("Duty: ");
+                        Serial.println(duty);
+                        //Serial.println("In voltage: ");
+                        //Serial.println(charger.getInVoltage());
+                        //Serial.println("Out voltage: ");
+                        //Serial.println(charger.getOutVoltage());
+                        Serial.println("Current: ");
+                        Serial.println(charger.getCurrent());
+                        ct = 0;
+                    }
+                    charger.updateDuty(charger.stepCV(CV_Kp, 520), true); // get and apply proposed duty cycle step size for output 520 ADC units
                     analogWrite(default_PWMpin, duty);
                     // 100 -> 2.14V, 1000 -> 21.14V (tolerate basically all output voltages)
-                    // 105 -> 2.5A max
-                    // 160 -> 3.4Vds min
+                    // 170 -> 4A max
+                    // 80 -> 1.7Vds min
                     chargerFault = Protection::runtimeOK(charger, &Vviolations, &Iviolations, 
-                        100, 1000, 105, 300, 30, 160);
+                        100, 1000, 170, 300, 30, 80);
                     if (chargerFault != 0) {
                         running = false;
                     }
                     if (digitalRead(default_inputPin) == HIGH) {
                         running = false;
                     }
-                    delay(10);
+                    delay(5);
                 }
                 
             }
@@ -242,6 +248,25 @@ void loop() {
                     delay(10);
                 }
             }
+            
+
+            if (chargerMode == 3) {
+                Protection::engage(default_battEnable, default_PWMpin, &duty);
+                duty = 20;
+                while(1) {
+                    analogWrite(default_PWMpin, duty);
+                    chargerFault = Protection::runtimeOK(charger, &Vviolations, &Iviolations, 
+                        100, 1000, 170, 100, 30, 100);
+                    if (chargerFault != 0) {
+                        running = false;
+                    }
+                    if (digitalRead(default_inputPin) == HIGH) {
+                        running = false;
+                    }
+                    delay(20);
+                }
+            }
+            
             Serial.println("INFO: Disengaging");
             Protection::disengage(default_battEnable, default_PWMpin, &duty);
             delay(10000);

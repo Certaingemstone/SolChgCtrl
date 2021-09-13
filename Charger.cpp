@@ -22,7 +22,7 @@ void Charger::resetMPPT()
 bool Charger::updateDuty(int8_t adjustmentIn, bool invert)
 {   
     int8_t adjustment = (invert) ? -adjustmentIn : adjustmentIn;
-    uint8_t margin = 10;
+    uint8_t margin = 4;
     bool success = false;
     // apply adjustment to duty cycle
     if (adjustment < 0) {
@@ -71,8 +71,8 @@ int8_t Charger::stepCV(float Kp, uint16_t scaledVtarget)
     int16_t adjRaw = (battV > scaledVtarget) ? (int16_t)(Kp * (battV - scaledVtarget) * -1) : (int16_t)(Kp * (scaledVtarget - battV));
     // If output > target, then give negative adjustment. Otherwise, output < target, give positive adjustment.
     // limit of step size for stability purposes
-    if (adjRaw > 20) {
-        adj = 20;
+    if (adjRaw > 40) {
+        adj = 40;
     }
     else if (adjRaw < -20) {
         adj = -20;
